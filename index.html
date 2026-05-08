@@ -213,6 +213,52 @@ body {
 }
 .submit-btn:hover { background: #4a3fb8; transform: translateY(-1px); }
 
+
+/* MY SCHEDULES LIST PAGE */
+.list-page { display: none; animation: fadeIn 0.3s ease; }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-state-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.empty-state-sub { font-size: 14px; }
+.course-card {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  cursor: pointer; transition: all 0.2s; position: relative;
+}
+.course-card:hover { border-color: var(--primary); box-shadow: 0 4px 16px rgba(91,79,207,0.1); transform: translateY(-1px); }
+.course-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.course-card-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.course-card-meta { font-size: 13px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.course-card-badge { font-size: 12px; font-weight: 600; background: var(--primary-light); color: var(--primary); padding: 3px 10px; border-radius: 20px; flex-shrink: 0; }
+.course-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.course-card-days { font-size: 13px; color: var(--muted); }
+.course-card-arrow { color: var(--primary); font-size: 18px; }
+.add-course-fab {
+  width: 100%; padding: 15px; background: var(--primary); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif;
+  font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; box-shadow: 0 4px 16px rgba(91,79,207,0.3);
+}
+.add-course-fab:hover { background: #4a3fb8; transform: translateY(-1px); }
+/* view-detail page (reuse confirm-page styles but for viewing saved course) */
+.detail-page { display: none; animation: fadeIn 0.3s ease; }
+.edit-course-btn {
+  width: 100%; padding: 13px; background: var(--primary); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; box-shadow: 0 4px 16px rgba(91,79,207,0.25);
+}
+.edit-course-btn:hover { background: #4a3fb8; }
+.delete-course-btn {
+  width: 100%; padding: 11px; background: transparent; color: var(--danger);
+  border: 1.5px solid var(--danger); border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; margin-top: 8px; transition: all 0.2s;
+}
+.delete-course-btn:hover { background: #FEE2E2; }
+
 /* CONFIRM PAGE */
 .confirm-page { display: none; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
@@ -339,8 +385,51 @@ body {
 <body>
 <div class="container">
 
+
+  <!-- LIST PAGE (home) -->
+  <div id="list-page" class="list-page" style="display:block">
+    <div class="header">
+      <div style="width:40px"></div>
+      <h1>ตารางสอนของฉัน</h1>
+    </div>
+    <div id="my-courses-container">
+      <div class="empty-state">
+        <div class="empty-state-icon">📚</div>
+        <div class="empty-state-title">ยังไม่มีตารางสอน</div>
+        <div class="empty-state-sub">กดปุ่มด้านล่างเพื่อเพิ่มตารางสอนใหม่</div>
+      </div>
+    </div>
+    <button class="add-course-fab" onclick="goToForm()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      เพิ่มตารางสอน
+    </button>
+  </div>
+
+  <!-- DETAIL PAGE (view saved course) -->
+  <div id="detail-page" class="detail-page">
+    <div class="header">
+      <button class="back-btn" onclick="goToList()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h1>รายละเอียดตารางสอน</h1>
+    </div>
+    <div class="confirm-course-card">
+      <div class="confirm-course-name" id="detail-course-name"></div>
+      <div class="confirm-course-meta" id="detail-course-meta"></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchDetailView('cal')" id="dvtab-cal">ปฏิทิน</button>
+      <button class="nav-tab" onclick="switchDetailView('list')" id="dvtab-list">รายการ</button>
+    </div>
+    <div id="detail-view-cal"><div id="detail-months-container"></div></div>
+    <div id="detail-view-list" style="display:none"><div id="detail-list-container"></div></div>
+    <button class="edit-course-btn" onclick="editSavedCourse()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      แก้ไขตารางสอน
+    </button>
+    <button class="delete-course-btn" onclick="deleteSavedCourse()">🗑 ลบตารางสอนนี้</button>
+  </div>
+
   <!-- FORM PAGE -->
-  <div id="form-page">
+  <div id="form-page" style="display:none">
     <div class="header">
       <button class="back-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
       <h1>ลงตารางสอน</h1>
@@ -416,12 +505,13 @@ body {
   <!-- CONFIRM PAGE -->
   <div id="confirm-page" class="confirm-page">
     <div class="header">
-      <button class="back-btn" onclick="goBack()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
-      <h1>สรุปตารางสอน</h1>
+      <button class="back-btn" id="confirm-back-btn" onclick="goBack()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h1 id="confirm-page-title">ยืนยันตารางสอน</h1>
     </div>
-    <div class="confirm-hero">
-      <div class="confirm-icon">✅</div>
-      <div class="confirm-title">บันทึกสำเร็จแล้ว!</div>
+    <div class="confirm-hero" id="confirm-hero">
+      <div class="confirm-icon" id="confirm-hero-icon">📋</div>
+      <div class="confirm-title" id="confirm-hero-title">ตรวจสอบตารางสอน</div>
+      <div class="confirm-subtitle" id="confirm-hero-sub">ตรวจสอบและแก้ไขได้ก่อนบันทึก</div>
     </div>
     <div class="confirm-course-card">
       <div class="confirm-course-name" id="confirm-course-name"></div>
@@ -433,10 +523,22 @@ body {
     </div>
     <div id="view-cal"><div id="months-container"></div></div>
     <div id="view-list" style="display:none"><div id="list-container"></div></div>
-    <button class="back-edit-btn" onclick="goBack()">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      แก้ไขตารางสอน
-    </button>
+    <div id="confirm-action-btns">
+      <button class="share-btn" id="final-save-btn" onclick="finalSave()" style="margin-top:12px">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+        บันทึกตารางสอน
+      </button>
+      <button class="back-edit-btn" onclick="goBack()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        กลับแก้ไขข้อมูล
+      </button>
+    </div>
+    <div id="saved-action-btns" style="display:none">
+      <button class="back-edit-btn" style="margin-top:12px" onclick="startNew()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        สร้างตารางสอนใหม่
+      </button>
+    </div>
   </div>
 </div>
 
@@ -847,11 +949,11 @@ function renderListView(classDays) {
       const entry   = classDays[dk];
       const slots   = entry.slots.map(t=>`${t.start}–${t.end}`).join(', ');
       const srcLabel = '📅';
-      const overrideBadge = entry.overridden ? `<span class="override-tag">✏️ แก้แล้ว</span>` : '';
+      const overrideBadge = "";
       rows += `
         <div class="detail-row">
           <div class="detail-date-badge badge-weekly">${srcLabel} ${dd}/${dm}</div>
-          <div class="detail-day-label">วัน${dayName}${overrideBadge}</div>
+          <div class="detail-day-label">วัน${dayName}</div>
           <div class="detail-times">${slots}</div>
           <button class="detail-edit-btn" onclick="openEditDay('${dk}')">✏️</button>
         </div>`;
@@ -870,12 +972,55 @@ function switchView(v) {
   document.getElementById('view-list').style.display = v==='list' ? 'block' : 'none';
 }
 
+let isSaved = false;
+
 function goBack() {
+  if (isSaved) return;
   overrideData = {};
   currentClassDays = {};
-  document.getElementById('form-page').style.display    = 'block';
-  document.getElementById('confirm-page').style.display = 'none';
+  if (editingCourseId) {
+    // going back from editing a saved course → back to detail
+    const course = savedCourses.find(c => c.id === editingCourseId);
+    if (course) { openCourseDetail(course.id); return; }
+  }
+  showPage('form-page');
+}
+
+function finalSave() {
+  isSaved = true;
+  // save/update course in store
+  const courseData = {
+    id: editingCourseId || Date.now().toString(),
+    name: document.getElementById('courseName').value || 'ไม่ระบุชื่อคอร์ส',
+    subject: document.getElementById('subject').value,
+    price: document.getElementById('price').value,
+    desc: document.getElementById('courseDesc').value,
+    classDays: JSON.parse(JSON.stringify(currentClassDays)),
+    weeklyData: JSON.parse(JSON.stringify(weeklyData)),
+    customData: JSON.parse(JSON.stringify(customData)),
+    overrideData: JSON.parse(JSON.stringify(overrideData)),
+    mode: mode,
+  };
+  if (editingCourseId) {
+    const idx = savedCourses.findIndex(c => c.id === editingCourseId);
+    if (idx !== -1) savedCourses[idx] = courseData;
+  } else {
+    savedCourses.push(courseData);
+  }
+  editingCourseId = null;
+  document.getElementById('confirm-hero').style.background = 'linear-gradient(135deg, #10B981 0%, #34D399 100%)';
+  document.getElementById('confirm-hero-icon').textContent = '✅';
+  document.getElementById('confirm-hero-title').textContent = 'บันทึกสำเร็จแล้ว!';
+  document.getElementById('confirm-hero-sub').textContent = 'ตารางสอนของคุณถูกบันทึกเรียบร้อย';
+  document.getElementById('confirm-page-title').textContent = 'บันทึกสำเร็จ';
+  document.getElementById('confirm-back-btn').style.visibility = 'hidden';
+  document.getElementById('confirm-action-btns').style.display = 'none';
+  document.getElementById('saved-action-btns').style.display = 'block';
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function startNew() {
+  goToList();
 }
 
 function handleSubmit() {
@@ -889,9 +1034,7 @@ function handleSubmit() {
   const classDays = generateSchedule();
   currentClassDays = classDays;
   renderConfirmPage(classDays);
-  document.getElementById('form-page').style.display    = 'none';
-  document.getElementById('confirm-page').style.display = 'block';
-  window.scrollTo({top:0,behavior:'smooth'});
+  showPage('confirm-page');
 }
 
 /* ══════════════════════════════════════
@@ -938,8 +1081,14 @@ function renderEditSlots() {
 }
 
 function addEditSlot() {
-  editSlots.push({start:'09:00', end:'10:00'});
-  renderEditSlots();
+  const overlayMode = document.getElementById('edit-overlay').dataset.mode;
+  if (overlayMode === 'detail') {
+    detailEditSlots.push({start:'09:00', end:'10:00'});
+    renderDetailEditSlots();
+  } else {
+    editSlots.push({start:'09:00', end:'10:00'});
+    renderEditSlots();
+  }
 }
 
 function removeEditSlot(i) {
@@ -949,10 +1098,15 @@ function removeEditSlot(i) {
 }
 
 function saveEditDay() {
+  const overlayMode = document.getElementById('edit-overlay').dataset.mode;
+  if (overlayMode === 'detail') {
+    saveEditDay_detail();
+    document.getElementById('edit-overlay').dataset.mode = '';
+    return;
+  }
   if (!editDK) return;
   overrideData[editDK] = JSON.parse(JSON.stringify(editSlots));
   closeEditDay();
-  // re-generate and re-render confirm page
   currentClassDays = generateSchedule();
   const courseName = document.getElementById('courseName').value || 'ไม่ระบุชื่อคอร์ส';
   renderConfirmPage(currentClassDays);
@@ -969,6 +1123,290 @@ function resetEditDay() {
 document.getElementById('edit-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeEditDay();
 });
+
+
+/* ══════════════════════════════════════
+   SAVED COURSES STORE
+══════════════════════════════════════ */
+let savedCourses = []; // [{id, name, subject, price, desc, classDays, weeklyData, customData, overrideData}]
+let viewingCourseId = null;
+let editingCourseId = null;
+
+function goToForm() {
+  // reset form for new course
+  editingCourseId = null;
+  isSaved = false;
+  overrideData = {};
+  currentClassDays = {};
+  weeklyData = {};
+  customData = {};
+  document.getElementById('courseName').value = '';
+  document.getElementById('subject').value = '';
+  document.getElementById('price').value = '';
+  document.getElementById('courseDesc').value = '';
+  buildWeeklyPanel();
+  updateSummary();
+  // reset confirm page state
+  document.getElementById('confirm-hero').style.background = '';
+  document.getElementById('confirm-hero-icon').textContent = '📋';
+  document.getElementById('confirm-hero-title').textContent = 'ตรวจสอบตารางสอน';
+  document.getElementById('confirm-hero-sub').textContent = 'ตรวจสอบและแก้ไขได้ก่อนบันทึก';
+  document.getElementById('confirm-page-title').textContent = 'ยืนยันตารางสอน';
+  document.getElementById('confirm-back-btn').style.visibility = '';
+  document.getElementById('confirm-action-btns').style.display = '';
+  document.getElementById('saved-action-btns').style.display = 'none';
+  showPage('form-page');
+}
+
+function goToList() {
+  renderMyCoursesPage();
+  showPage('list-page');
+}
+
+function showPage(id) {
+  ['list-page','form-page','confirm-page','detail-page'].forEach(p => {
+    document.getElementById(p).style.display = p === id ? 'block' : 'none';
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderMyCoursesPage() {
+  const c = document.getElementById('my-courses-container');
+  if (!savedCourses.length) {
+    c.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">📚</div>
+      <div class="empty-state-title">ยังไม่มีตารางสอน</div>
+      <div class="empty-state-sub">กดปุ่มด้านล่างเพื่อเพิ่มตารางสอนใหม่</div>
+    </div>`;
+    return;
+  }
+  c.innerHTML = '';
+  savedCourses.forEach(course => {
+    const dayCount = Object.keys(course.classDays).length;
+    const card = document.createElement('div');
+    card.className = 'course-card';
+    card.onclick = () => openCourseDetail(course.id);
+    card.innerHTML = `
+      <div class="course-card-top">
+        <div>
+          <div class="course-card-name">${course.name}</div>
+          <div class="course-card-meta">
+            <span>📚 ${course.subject}</span>
+            <span>💰 ${Number(course.price).toLocaleString()} บาท/ชม.</span>
+          </div>
+        </div>
+        <span class="course-card-badge">${dayCount} วัน</span>
+      </div>
+      <div class="course-card-footer">
+        <div class="course-card-days">🗓 ${dayCount} วันสอนในช่วงนี้</div>
+        <div class="course-card-arrow">›</div>
+      </div>`;
+    c.appendChild(card);
+  });
+}
+
+function openCourseDetail(id) {
+  const course = savedCourses.find(c => c.id === id);
+  if (!course) return;
+  viewingCourseId = id;
+
+  document.getElementById('detail-course-name').textContent = course.name;
+  document.getElementById('detail-course-meta').innerHTML =
+    `<span>📚 ${course.subject}</span><span>💰 ${Number(course.price).toLocaleString()} บาท/ชม.</span>`;
+
+  // render calendar and list using saved classDays
+  renderMiniCal_detail(course.classDays, 'detail-months-container');
+  renderListView_detail(course.classDays, 'detail-list-container');
+  switchDetailView('cal');
+  showPage('detail-page');
+}
+
+function switchDetailView(v) {
+  document.getElementById('dvtab-cal').classList.toggle('active', v==='cal');
+  document.getElementById('dvtab-list').classList.toggle('active', v==='list');
+  document.getElementById('detail-view-cal').style.display  = v==='cal'  ? 'block' : 'none';
+  document.getElementById('detail-view-list').style.display = v==='list' ? 'block' : 'none';
+}
+
+function renderMiniCal_detail(classDays, containerId) {
+  // reuse same logic as renderMiniCal but target different container
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  if (!Object.keys(classDays).length) { container.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:14px;">ไม่มีคลาส</div>'; return; }
+  const months = {};
+  Object.keys(classDays).sort().forEach(dk => {
+    const [y,m] = dk.split('-').map(Number);
+    const mkey = `${y}-${String(m).padStart(2,'0')}`;
+    if (!months[mkey]) months[mkey] = [];
+    months[mkey].push(dk);
+  });
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  Object.keys(months).sort().forEach(mkey => {
+    const [y,m] = mkey.split('-').map(Number);
+    const firstDay = new Date(y, m-1, 1).getDay();
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const count = months[mkey].length;
+    let gridHTML = DNAMES.map(d=>`<div class="mini-dname">${d}</div>`).join('');
+    for (let i=0;i<firstDay;i++) gridHTML+=`<div class="mini-cell"></div>`;
+    for (let d=1;d<=daysInMonth;d++) {
+      const dk = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const entry = classDays[dk];
+      const isToday = dk===todayStr;
+      let cls='mini-cell';
+      if (entry) cls+=' has-class';
+      if (isToday) cls+=' today-mark';
+      let inner=`<span>${d}</span>`;
+      if (entry && entry.slots.length) inner+=`<span class="mini-times">${entry.slots[0].start}</span>`;
+      // clickable for edit
+      const clickAttr = entry ? `onclick="openDetailEditDay('${dk}')" style="cursor:pointer" title="แก้ไขเวลา"` : '';
+      gridHTML+=`<div class="${cls}" ${clickAttr}>${inner}</div>`;
+    }
+    const sec = document.createElement('div');
+    sec.className = 'month-section';
+    sec.innerHTML = `
+      <div class="month-header">
+        <div class="month-title">${MNAMES[m-1]} ${y+543}</div>
+        <div class="month-count">${count} วัน</div>
+      </div>
+      <div class="mini-cal">
+        <div class="mini-cal-grid">${gridHTML}</div>
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:transparent;outline:2px solid var(--primary);outline-offset:-1px"></div><span>วันนี้</span></div>
+        </div>
+      </div>`;
+    container.appendChild(sec);
+  });
+}
+
+function renderListView_detail(classDays, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  const months = {};
+  Object.keys(classDays).sort().forEach(dk => {
+    const [y,m] = dk.split('-').map(Number);
+    const mkey = `${y}-${String(m).padStart(2,'0')}`;
+    if (!months[mkey]) months[mkey] = [];
+    months[mkey].push(dk);
+  });
+  if (!Object.keys(months).length) {
+    container.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:14px;">ไม่มีคลาส</div>';
+    return;
+  }
+  Object.keys(months).sort().forEach(mkey => {
+    const [y,m] = mkey.split('-').map(Number);
+    const dates = months[mkey];
+    let rows = '';
+    dates.sort().forEach(dk => {
+      const [,dm,dd] = dk.split('-').map(Number);
+      const dt = new Date(y, dm-1, dd);
+      const dayName = DAYNAMES_TH[dt.getDay()];
+      const entry = classDays[dk];
+      const slots = entry.slots.map(t=>`${t.start}–${t.end}`).join(', ');
+      rows += `
+        <div class="detail-row">
+          <div class="detail-date-badge badge-weekly">📅 ${dd}/${dm}</div>
+          <div class="detail-day-label">วัน${dayName}</div>
+          <div class="detail-times">${slots}</div>
+          <button class="detail-edit-btn" onclick="openDetailEditDay('${dk}')">✏️</button>
+        </div>`;
+    });
+    const sec = document.createElement('div');
+    sec.className = 'detail-section';
+    sec.innerHTML = `<div class="detail-section-title">${MNAMES[m-1]} ${y+543} · ${dates.length} วัน</div>${rows}`;
+    container.appendChild(sec);
+  });
+}
+
+/* edit day from detail page */
+let detailEditDK = null;
+let detailEditSlots = [];
+
+function openDetailEditDay(dk) {
+  const course = savedCourses.find(c => c.id === viewingCourseId);
+  if (!course) return;
+  const entry = course.classDays[dk];
+  if (!entry) return;
+  detailEditDK = dk;
+  detailEditSlots = JSON.parse(JSON.stringify(entry.slots));
+
+  document.getElementById('edit-date-label').textContent = fmtDate(dk);
+  document.getElementById('edit-reset-btn').classList.add('hidden');
+  renderDetailEditSlots();
+  // swap save handler
+  document.getElementById('edit-overlay').dataset.mode = 'detail';
+  document.getElementById('edit-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderDetailEditSlots() {
+  const c = document.getElementById('edit-slots-wrap');
+  c.innerHTML = '';
+  detailEditSlots.forEach((t, i) => {
+    const r = document.createElement('div'); r.className = 'time-row';
+    r.innerHTML = `<span class="time-num">${i+1}</span>
+      <select class="time-select" onchange="detailEditSlots[${i}].start=this.value">${timeOpts(t.start)}</select>
+      <span class="time-sep">-</span>
+      <select class="time-select" onchange="detailEditSlots[${i}].end=this.value">${timeOpts(t.end)}</select>
+      <button class="remove-time" onclick="removeDetailEditSlot(${i})">✕</button>`;
+    c.appendChild(r);
+  });
+}
+
+function removeDetailEditSlot(i) {
+  if (detailEditSlots.length <= 1) return;
+  detailEditSlots.splice(i, 1);
+  renderDetailEditSlots();
+}
+
+function saveEditDay_detail() {
+  const course = savedCourses.find(c => c.id === viewingCourseId);
+  if (!course || !detailEditDK) return;
+  course.classDays[detailEditDK].slots = JSON.parse(JSON.stringify(detailEditSlots));
+  closeEditDay();
+  // re-render detail page
+  renderMiniCal_detail(course.classDays, 'detail-months-container');
+  renderListView_detail(course.classDays, 'detail-list-container');
+  detailEditDK = null;
+  detailEditSlots = [];
+}
+
+function editSavedCourse() {
+  const course = savedCourses.find(c => c.id === viewingCourseId);
+  if (!course) return;
+  editingCourseId = course.id;
+  // restore form fields
+  document.getElementById('courseName').value = course.name;
+  document.getElementById('subject').value = course.subject;
+  document.getElementById('price').value = course.price;
+  document.getElementById('courseDesc').value = course.desc || '';
+  // restore schedule data
+  weeklyData = JSON.parse(JSON.stringify(course.weeklyData));
+  customData = JSON.parse(JSON.stringify(course.customData));
+  overrideData = JSON.parse(JSON.stringify(course.overrideData));
+  mode = course.mode || 'weekly';
+  buildWeeklyPanel();
+  updateSummary();
+  // go to confirm page directly with existing schedule for review
+  isSaved = false;
+  currentClassDays = JSON.parse(JSON.stringify(course.classDays));
+  renderConfirmPage(currentClassDays);
+  document.getElementById('confirm-hero').style.background = '';
+  document.getElementById('confirm-hero-icon').textContent = '📋';
+  document.getElementById('confirm-hero-title').textContent = 'แก้ไขตารางสอน';
+  document.getElementById('confirm-hero-sub').textContent = 'แก้ไขได้ แล้วกดบันทึกเพื่ออัปเดต';
+  document.getElementById('confirm-page-title').textContent = 'แก้ไขตารางสอน';
+  document.getElementById('confirm-back-btn').style.visibility = '';
+  document.getElementById('confirm-action-btns').style.display = '';
+  document.getElementById('saved-action-btns').style.display = 'none';
+  showPage('confirm-page');
+}
+
+function deleteSavedCourse() {
+  if (!confirm('ต้องการลบตารางสอนนี้ใช่ไหม?')) return;
+  savedCourses = savedCourses.filter(c => c.id !== viewingCourseId);
+  viewingCourseId = null;
+  goToList();
+}
 
 /* ── INIT ── */
 buildWeeklyPanel();
