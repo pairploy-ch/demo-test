@@ -1,0 +1,819 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ลงตารางสอน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #5B4FCF;
+  --primary-light: #EDE9FF;
+  --primary-mid: #A99EE8;
+  --accent: #FF6B35;
+  --bg: #F7F6FB;
+  --card: #FFFFFF;
+  --border: #E2DFEF;
+  --text: #1A1A2E;
+  --muted: #8A8AA0;
+  --danger: #EF4444;
+  --success: #10B981;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 20px 16px 100px;
+}
+.container { width: 100%; max-width: 480px; }
+.header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+.back-btn {
+  width: 40px; height: 40px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--card);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s;
+}
+.back-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+.header h1 { font-size: 20px; font-weight: 700; }
+.section { margin-bottom: 20px; }
+.label { font-size: 14px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+.req { color: var(--accent); }
+.input, .textarea, .select {
+  width: 100%; padding: 13px 16px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 15px;
+  color: var(--text); background: var(--card); outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus, .textarea:focus, .select:focus {
+  border-color: var(--primary); box-shadow: 0 0 0 3px rgba(91,79,207,0.1);
+}
+.input::placeholder, .textarea::placeholder { color: var(--muted); }
+.textarea { resize: vertical; min-height: 100px; }
+.select {
+  appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%238A8AA0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px;
+}
+.price-wrapper { position: relative; }
+.price-suffix {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: var(--muted); pointer-events: none;
+}
+.tab-group {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; background: var(--card); margin-bottom: 12px;
+}
+.tab-btn {
+  padding: 12px; font-family: 'Sarabun', sans-serif;
+  font-size: 14px; font-weight: 600; border: none; cursor: pointer;
+  background: transparent; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all 0.2s;
+}
+.tab-btn:first-child { border-right: 1.5px solid var(--border); }
+.tab-btn.active { background: var(--primary); color: #fff; }
+.info-hint {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg); border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: 13px; color: var(--muted); margin-bottom: 10px;
+}
+.day-row {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 8px; overflow: hidden;
+}
+.day-row.active { border-color: var(--primary); }
+.day-header { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; }
+.day-check {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.day-row.active .day-check { background: var(--primary); border-color: var(--primary); }
+.day-check svg { opacity: 0; transition: opacity 0.2s; }
+.day-row.active .day-check svg { opacity: 1; }
+.day-name { font-size: 15px; font-weight: 600; flex: 1; }
+.day-status { font-size: 13px; color: var(--muted); }
+.day-row.active .day-status { color: var(--primary); font-weight: 500; }
+.day-times { padding: 0 16px 12px; display: none; }
+.day-row.active .day-times { display: block; }
+.time-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.time-num { font-size: 13px; color: var(--muted); width: 16px; flex-shrink: 0; }
+.time-select {
+  flex: 1; padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif;
+  font-size: 14px; background: var(--bg); outline: none; cursor: pointer; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238A8AA0' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+}
+.time-select:focus { border-color: var(--primary); outline: none; }
+.time-sep { font-size: 13px; color: var(--muted); }
+.remove-time {
+  width: 30px; height: 30px; border-radius: 6px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 14px; flex-shrink: 0; transition: all 0.15s;
+}
+.remove-time:hover { border-color: var(--danger); color: var(--danger); }
+.add-time-btn {
+  width: 100%; padding: 9px; background: var(--bg);
+  border: 1.5px dashed var(--border); border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 13px; color: var(--primary);
+  cursor: pointer; font-weight: 600; transition: all 0.15s;
+}
+.add-time-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+.custom-date-entry {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 8px; overflow: hidden;
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+.cde-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; background: var(--bg); border-bottom: 1.5px solid var(--border);
+}
+.cde-date { font-size: 14px; font-weight: 600; flex: 1; display: flex; align-items: center; gap: 8px; }
+.cde-remove {
+  width: 28px; height: 28px; border-radius: 6px;
+  border: 1.5px solid var(--border); background: var(--card);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 13px; transition: all 0.15s;
+}
+.cde-remove:hover { border-color: var(--danger); color: var(--danger); }
+.cde-times { padding: 10px 14px; }
+.add-date-btn {
+  width: 100%; padding: 13px; margin-top: 4px;
+  border: 2px dashed var(--primary-mid); border-radius: var(--radius-sm);
+  background: var(--primary-light); font-family: 'Sarabun', sans-serif;
+  font-size: 14px; color: var(--primary); font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s;
+}
+.add-date-btn:hover { background: #ddd9ff; border-color: var(--primary); }
+.cal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(26,26,46,0.5);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.cal-overlay.open { display: flex; }
+.cal-sheet {
+  width: 100%; max-width: 480px;
+  background: var(--card); border-radius: 20px 20px 0 0;
+  padding: 12px 20px 36px;
+}
+.cal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 16px; }
+.cal-sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.cal-sheet-title { font-size: 16px; font-weight: 700; }
+.cal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; font-size: 16px; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.cal-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.cal-nav { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--muted); line-height: 1; }
+.cal-nav:hover { border-color: var(--primary); color: var(--primary); }
+.cal-month-label { font-size: 15px; font-weight: 700; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.cal-dname { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); padding: 4px 0 8px; }
+.cal-dname:first-child { color: #EF4444; }
+.cal-dname:last-child { color: #3B82F6; }
+.cal-cell { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; position: relative; user-select: none; }
+.cal-cell.empty { cursor: default; pointer-events: none; }
+.cal-cell.past { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.cal-cell.today { color: var(--primary); font-weight: 700; }
+.cal-cell.today::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--primary); }
+.cal-cell.selected { background: var(--primary); color:#fff; font-weight:700; }
+.cal-cell.selected::after { background:#fff !important; }
+.cal-cell:not(.empty):not(.past):not(.selected):hover { background: var(--primary-light); color: var(--primary); }
+.summary-box {
+  background: var(--primary-light); border: 1.5px solid var(--primary-mid);
+  border-radius: var(--radius); padding: 16px; margin-top: 24px;
+}
+.summary-title { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.summary-empty { font-size: 13px; color: var(--muted); }
+.summary-mode { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.summary-rows { display: flex; flex-direction: column; gap: 6px; }
+.summary-row { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; }
+.summary-day { font-weight: 700; color: var(--primary); min-width: 80px; }
+.summary-times { color: var(--text); }
+.summary-divider { border:none; border-top:1.5px solid var(--primary-mid); margin:10px 0; }
+.summary-total { font-size: 13px; color: var(--primary); font-weight: 600; }
+.submit-btn {
+  width: 100%; padding: 15px; background: var(--primary); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-top: 24px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s; box-shadow: 0 4px 16px rgba(91,79,207,0.3);
+}
+.submit-btn:hover { background: #4a3fb8; transform: translateY(-1px); }
+
+/* CONFIRM PAGE */
+.confirm-page { display: none; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.confirm-hero {
+  background: linear-gradient(135deg, #5B4FCF 0%, #7B6FDF 100%);
+  border-radius: var(--radius); padding: 24px 20px; margin-bottom: 20px;
+  color: #fff; text-align: center;
+}
+.confirm-icon { width: 56px; height: 56px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px; }
+.confirm-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.confirm-subtitle { font-size: 13px; opacity: 0.8; }
+.confirm-course-card { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
+.confirm-course-name { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.confirm-course-meta { font-size: 13px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+
+/* legend chips for source type */
+.legend-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 4px 10px;
+  border-radius: 20px; border: 1.5px solid;
+}
+.chip-weekly { background: var(--primary-light); color: var(--primary); border-color: var(--primary-mid); }
+.chip-custom  { background: #FFF4ED; color: #C04B0C; border-color: #FBBF92; }
+.chip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.chip-dot-weekly { background: var(--primary); }
+.chip-dot-custom  { background: #FF6B35; }
+
+/* MINI CALENDAR */
+.month-section { margin-bottom: 20px; }
+.month-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.month-title { font-size: 15px; font-weight: 700; }
+.month-count { background: var(--primary-light); color: var(--primary); font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.mini-cal { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.mini-cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+.mini-dname { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); padding: 10px 0 6px; border-bottom: 1px solid var(--border); }
+.mini-dname:first-child { color: #EF4444; }
+.mini-dname:last-child { color: #3B82F6; }
+.mini-cell {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 500; position: relative;
+}
+.mini-cell.has-class {
+  background: var(--primary); color: #fff; font-weight: 700;
+  margin: 2px; border-radius: 8px;
+}
+.mini-times { font-size: 9px; opacity: 0.85; font-weight: 500; max-width: 100%; overflow: hidden; white-space: nowrap; }
+.mini-cell.today-mark { outline: 2px solid var(--primary); outline-offset: -2px; border-radius: 8px; }
+.mini-cell.today-mark:not(.has-class) { color: var(--primary); font-weight: 700; }
+.legend-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-top: 1.5px solid var(--border); font-size: 12px; color: var(--muted); }
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* LIST */
+.detail-section { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 16px; }
+.detail-section-title { font-size: 13px; font-weight: 700; color: var(--muted); padding: 12px 16px; background: var(--bg); border-bottom: 1.5px solid var(--border); text-transform: uppercase; letter-spacing: 0.5px; }
+.detail-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+.detail-row:last-child { border-bottom: none; }
+.detail-date-badge { font-size: 12px; font-weight: 700; border-radius: 8px; padding: 4px 10px; min-width: 52px; text-align: center; flex-shrink: 0; }
+.badge-weekly { background: var(--primary-light); color: var(--primary); }
+.badge-custom  { background: #FFF4ED; color: #C04B0C; }
+.badge-both    { background: #F3F0FF; color: var(--primary); border: 1.5px solid #FBBF92; }
+.detail-day-label { font-size: 14px; font-weight: 600; flex: 1; }
+.detail-times { font-size: 13px; color: var(--muted); }
+
+.nav-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.nav-tab { flex: 1; padding: 9px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--card); font-family: 'Sarabun', sans-serif; font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.2s; text-align: center; }
+.nav-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.back-edit-btn { width: 100%; padding: 13px; background: transparent; color: var(--primary); border: 1.5px solid var(--primary); border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 8px; }
+.back-edit-btn:hover { background: var(--primary-light); }
+.share-btn { width: 100%; padding: 15px; background: var(--success); color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+.share-btn:hover { background: #0d9b6e; transform: translateY(-1px); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- FORM PAGE -->
+  <div id="form-page">
+    <div class="header">
+      <button class="back-btn"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h1>ลงตารางสอน</h1>
+    </div>
+    <div class="section">
+      <div class="label">ชื่อคอร์ส <span class="req">*</span></div>
+      <input class="input" type="text" placeholder="เช่น ฟิสิกส์ ม.5 สอวน." id="courseName">
+    </div>
+    <div class="section">
+      <div class="label">หมวดวิชา <span class="req">*</span></div>
+      <select class="select" id="subject">
+        <option value="" disabled selected>เลือกหมวดวิชา</option>
+        <option>คณิตศาสตร์</option><option>ฟิสิกส์</option><option>เคมี</option>
+        <option>ชีววิทยา</option><option>ภาษาไทย</option><option>ภาษาอังกฤษ</option>
+        <option>สังคมศึกษา</option><option>คอมพิวเตอร์</option>
+      </select>
+    </div>
+    <div class="section">
+      <div class="label">ราคา/ชั่วโมง <span class="req">*</span></div>
+      <div class="price-wrapper">
+        <input class="input" type="number" placeholder="500" id="price" style="padding-right:48px">
+        <span class="price-suffix">บาท</span>
+      </div>
+    </div>
+    <div class="section">
+      <div class="label">รายละเอียดคอร์ส</div>
+      <textarea class="textarea" placeholder="อธิบายเนื้อหาที่สอน วิธีการสอน สื่อที่ใช้ หรือเงื่อนไขอื่น ๆ" id="courseDesc"></textarea>
+    </div>
+    <div class="section">
+      <div class="label">วันและเวลาสอน <span class="req">*</span></div>
+      <div class="tab-group">
+        <button class="tab-btn active" id="tab-weekly" onclick="switchTab('weekly')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          รายสัปดาห์
+        </button>
+        <button class="tab-btn" id="tab-custom" onclick="switchTab('custom')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+          กำหนดเอง
+        </button>
+      </div>
+      <div id="weekly-panel">
+        <div class="info-hint">
+          <svg width="14" height="14" fill="var(--muted)" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+          เปิด/ปิดแต่ละวัน แล้วกำหนดช่วงเวลาได้อิสระ
+        </div>
+        <div id="days-container"></div>
+      </div>
+      <div id="custom-panel" style="display:none">
+        <div class="info-hint">
+          <svg width="14" height="14" fill="var(--muted)" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+          กดปุ่มด้านล่าง เลือกวันจากปฏิทิน แล้วกำหนดเวลาได้อิสระ
+        </div>
+        <div id="custom-dates-container"></div>
+        <button class="add-date-btn" onclick="openCalendar()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg>
+          เพิ่มวันที่
+        </button>
+      </div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        สรุปตารางสอน
+      </div>
+      <div id="summary-content"><div class="summary-empty">ยังไม่ได้เลือกวันและเวลา</div></div>
+    </div>
+    <button class="submit-btn" onclick="handleSubmit()">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+      บันทึกตารางสอน
+    </button>
+  </div>
+
+  <!-- CONFIRM PAGE -->
+  <div id="confirm-page" class="confirm-page">
+    <div class="header">
+      <button class="back-btn" onclick="goBack()"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h1>สรุปตารางสอน</h1>
+    </div>
+    <div class="confirm-hero">
+      <div class="confirm-icon">✅</div>
+      <div class="confirm-title">บันทึกสำเร็จแล้ว!</div>
+    </div>
+    <div class="confirm-course-card">
+      <div class="confirm-course-name" id="confirm-course-name"></div>
+      <div class="confirm-course-meta" id="confirm-course-meta"></div>
+    </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchView('cal')" id="vtab-cal">ปฏิทิน</button>
+      <button class="nav-tab" onclick="switchView('list')" id="vtab-list">รายการ</button>
+    </div>
+    <div id="view-cal"><div id="months-container"></div></div>
+    <div id="view-list" style="display:none"><div id="list-container"></div></div>
+    <button class="back-edit-btn" onclick="goBack()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      แก้ไขตารางสอน
+    </button>
+  </div>
+</div>
+
+<!-- Calendar Modal -->
+<div class="cal-overlay" id="cal-overlay">
+  <div class="cal-sheet">
+    <div class="cal-handle"></div>
+    <div class="cal-sheet-header">
+      <div class="cal-sheet-title">เลือกวันที่สอน</div>
+      <button class="cal-close" onclick="closeCalendar()">✕</button>
+    </div>
+    <div class="cal-nav-row">
+      <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month-label" id="cal-month-label"></div>
+      <button class="cal-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<script>
+const DAYS = [
+  {key:'sun',label:'วันอาทิตย์',short:'อาท'},
+  {key:'mon',label:'วันจันทร์', short:'จ'},
+  {key:'tue',label:'วันอังคาร',short:'อ'},
+  {key:'wed',label:'วันพุธ',   short:'พ'},
+  {key:'thu',label:'วันพฤหัสบดี',short:'พฤ'},
+  {key:'fri',label:'วันศุกร์', short:'ศ'},
+  {key:'sat',label:'วันเสาร์', short:'ส'},
+];
+const DAY_KEY_TO_DOW = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+const DNAMES  = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const DAYNAMES_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const MNAMES  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+let mode = 'weekly';
+let weeklyData = {};   // {mon: [{start,end},...], ...}
+let customData = {};   // {'2025-06-10': [{start,end},...], ...}
+
+const today = new Date();
+let calYear  = today.getFullYear();
+let calMonth = today.getMonth();
+
+/* ── time options ── */
+function timeOpts(sel) {
+  let s = '';
+  for (let i=0;i<24;i++){const t=String(i).padStart(2,'0')+':00';s+=`<option value="${t}"${sel===t?' selected':''}>${t}</option>`;}
+  return s;
+}
+
+/* ══════════════════════════════════════
+   WEEKLY PANEL
+══════════════════════════════════════ */
+function buildWeeklyPanel() {
+  const c = document.getElementById('days-container');
+  c.innerHTML = '';
+  DAYS.forEach(d => {
+    const on  = !!weeklyData[d.key];
+    const ts  = on ? weeklyData[d.key] : [];
+    const lbl = on && ts.length ? ts.map(t=>`${t.start}–${t.end}`).join(', ') : 'ปิด';
+    const el  = document.createElement('div');
+    el.className = 'day-row'+(on?' active':'');
+    el.id = 'row-'+d.key;
+    el.innerHTML = `
+      <div class="day-header" onclick="toggleDay('${d.key}')">
+        <div class="day-check"><svg width="13" height="13" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <div class="day-name">${d.label}</div>
+        <div class="day-status" id="status-${d.key}">${lbl}</div>
+      </div>
+      <div class="day-times" id="times-${d.key}">
+        <div id="tr-${d.key}"></div>
+        <button class="add-time-btn" onclick="addSlot('${d.key}')">+ เพิ่มช่วงเวลา</button>
+      </div>`;
+    c.appendChild(el);
+    if (on) renderSlots(d.key);
+  });
+}
+function toggleDay(key) {
+  if (weeklyData[key]) delete weeklyData[key];
+  else weeklyData[key] = [{start:'09:00',end:'10:00'}];
+  buildWeeklyPanel(); updateSummary();
+}
+function renderSlots(key) {
+  const c = document.getElementById('tr-'+key); if (!c) return; c.innerHTML = '';
+  (weeklyData[key]||[]).forEach((t,i)=>{
+    const r = document.createElement('div'); r.className='time-row';
+    r.innerHTML=`<span class="time-num">${i+1}</span>
+      <select class="time-select" onchange="setTime('${key}',${i},'start',this.value)">${timeOpts(t.start)}</select>
+      <span class="time-sep">-</span>
+      <select class="time-select" onchange="setTime('${key}',${i},'end',this.value)">${timeOpts(t.end)}</select>
+      <button class="remove-time" onclick="rmSlot('${key}',${i})">✕</button>`;
+    c.appendChild(r);
+  });
+}
+function setTime(key,i,f,v){if(weeklyData[key]){weeklyData[key][i][f]=v;setStatus(key);updateSummary();}}
+function addSlot(key){if(!weeklyData[key])return;weeklyData[key].push({start:'09:00',end:'10:00'});renderSlots(key);setStatus(key);updateSummary();}
+function rmSlot(key,i){weeklyData[key].splice(i,1);if(!weeklyData[key].length){delete weeklyData[key];buildWeeklyPanel();}else{renderSlots(key);setStatus(key);}updateSummary();}
+function setStatus(key){const el=document.getElementById('status-'+key);if(!el)return;const t=weeklyData[key]||[];el.textContent=t.length?t.map(x=>`${x.start}–${x.end}`).join(', '):'ปิด';}
+
+/* ══════════════════════════════════════
+   CALENDAR MODAL
+══════════════════════════════════════ */
+function openCalendar(){renderCalendar();document.getElementById('cal-overlay').style.display='flex';document.body.style.overflow='hidden';}
+function closeCalendar(){document.getElementById('cal-overlay').style.display='none';document.body.style.overflow='';}
+document.getElementById('cal-overlay').addEventListener('click',function(e){if(e.target===this)closeCalendar();});
+function changeMonth(d){calMonth+=d;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function renderCalendar(){
+  document.getElementById('cal-month-label').textContent=MNAMES[calMonth]+' '+(calYear+543);
+  const g=document.getElementById('cal-grid'); g.innerHTML='';
+  DNAMES.forEach(n=>{const el=document.createElement('div');el.className='cal-dname';el.textContent=n;g.appendChild(el);});
+  const fd=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const tm=new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime();
+  for(let i=0;i<fd;i++){const el=document.createElement('div');el.className='cal-cell empty';g.appendChild(el);}
+  for(let d=1;d<=dim;d++){
+    const el=document.createElement('div');el.className='cal-cell';el.textContent=d;
+    const dk=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dt=new Date(calYear,calMonth,d).getTime();
+    if(dt<tm){el.classList.add('past');}
+    else{
+      if(dt===tm) el.classList.add('today');
+      if(customData[dk]) el.classList.add('selected');
+      el.addEventListener('click',()=>selectDate(dk));
+    }
+    g.appendChild(el);
+  }
+}
+function selectDate(dk){
+  if(!customData[dk]) customData[dk]=[{start:'09:00',end:'10:00'}];
+  closeCalendar(); renderCustomDates(); updateSummary();
+  setTimeout(()=>{const el=document.getElementById('cde-'+dk);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});},200);
+}
+
+/* ══════════════════════════════════════
+   CUSTOM DATES
+══════════════════════════════════════ */
+function fmtDate(dk){
+  const[y,m,d]=dk.split('-').map(Number);
+  const dt=new Date(y,m-1,d);
+  return `วัน${DAYNAMES_TH[dt.getDay()]} ${d} ${MNAMES[m-1]} ${y+543}`;
+}
+function renderCustomDates(){
+  const c=document.getElementById('custom-dates-container'); c.innerHTML='';
+  Object.keys(customData).sort().forEach(dk=>{
+    const div=document.createElement('div');div.className='custom-date-entry';div.id='cde-'+dk;
+    div.innerHTML=`
+      <div class="cde-header">
+        <div class="cde-date">
+          <svg width="14" height="14" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${fmtDate(dk)}
+        </div>
+        <button class="cde-remove" onclick="rmDate('${dk}')">🗑</button>
+      </div>
+      <div class="cde-times"><div id="ctr-${dk}"></div>
+        <button class="add-time-btn" onclick="addCSlot('${dk}')">+ เพิ่มช่วงเวลา</button>
+      </div>`;
+    c.appendChild(div);
+    renderCSlots(dk);
+  });
+}
+function renderCSlots(dk){
+  const c=document.getElementById('ctr-'+dk);if(!c)return;c.innerHTML='';
+  (customData[dk]||[]).forEach((t,i)=>{
+    const r=document.createElement('div');r.className='time-row';
+    r.innerHTML=`<span class="time-num">${i+1}</span>
+      <select class="time-select" onchange="setCTime('${dk}',${i},'start',this.value)">${timeOpts(t.start)}</select>
+      <span class="time-sep">-</span>
+      <select class="time-select" onchange="setCTime('${dk}',${i},'end',this.value)">${timeOpts(t.end)}</select>
+      <button class="remove-time" onclick="rmCSlot('${dk}',${i})">✕</button>`;
+    c.appendChild(r);
+  });
+}
+function setCTime(dk,i,f,v){if(customData[dk]){customData[dk][i][f]=v;updateSummary();}}
+function addCSlot(dk){if(!customData[dk])return;customData[dk].push({start:'09:00',end:'10:00'});renderCSlots(dk);updateSummary();}
+function rmCSlot(dk,i){customData[dk].splice(i,1);if(!customData[dk].length){delete customData[dk];renderCustomDates();}else renderCSlots(dk);updateSummary();}
+function rmDate(dk){delete customData[dk];renderCustomDates();updateSummary();}
+
+/* ══════════════════════════════════════
+   TAB SWITCH
+══════════════════════════════════════ */
+function switchTab(m){
+  mode=m;
+  document.getElementById('tab-weekly').classList.toggle('active',m==='weekly');
+  document.getElementById('tab-custom').classList.toggle('active',m==='custom');
+  document.getElementById('weekly-panel').style.display=m==='weekly'?'block':'none';
+  document.getElementById('custom-panel').style.display=m==='custom'?'block':'none';
+  updateSummary();
+}
+
+/* ══════════════════════════════════════
+   SUMMARY (form page)
+══════════════════════════════════════ */
+const NOTE = `<hr class="summary-divider"><div class="summary-total">🗓 ระบบจะ generate ตารางให้ 1 เดือนล่วงหน้าอัตโนมัติ</div>`;
+function updateSummary(){
+  const el=document.getElementById('summary-content');
+  const hasWeekly=Object.keys(weeklyData).length>0;
+  const hasCustom=Object.keys(customData).length>0;
+  if(!hasWeekly && !hasCustom){el.innerHTML='<div class="summary-empty">ยังไม่ได้เลือกวันและเวลา</div>';return;}
+  let h='<div class="summary-rows">';
+  if(hasWeekly){
+    h+=`<div class="summary-mode">📅 รายสัปดาห์ · ${Object.keys(weeklyData).length} วัน/สัปดาห์</div>`;
+    DAYS.filter(d=>weeklyData[d.key]).forEach(d=>{
+      h+=`<div class="summary-row"><div class="summary-day">${d.short}</div><div class="summary-times">${weeklyData[d.key].map(t=>`${t.start}–${t.end}`).join(', ')}</div></div>`;
+    });
+  }
+  if(hasCustom){
+    if(hasWeekly) h+=`<hr class="summary-divider">`;
+    h+=`<div class="summary-mode">📌 กำหนดเอง · ${Object.keys(customData).length} วัน</div>`;
+    Object.keys(customData).sort().forEach(dk=>{
+      const[y,m,d]=dk.split('-').map(Number);
+      const dt=new Date(y,m-1,d);
+      h+=`<div class="summary-row"><div class="summary-day">${DNAMES[dt.getDay()]} ${d}/${m}</div><div class="summary-times">${customData[dk].map(t=>`${t.start}–${t.end}`).join(', ')}</div></div>`;
+    });
+  }
+  el.innerHTML=h+'</div>'+NOTE;
+}
+
+/* ══════════════════════════════════════
+   GENERATE SCHEDULE — รวมทั้ง 2 แหล่ง
+══════════════════════════════════════ */
+function generateSchedule() {
+  // classDays[dk] = { slots:[{start,end},...], source:'weekly'|'custom'|'both' }
+  const classDays = {};
+
+  const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endDate   = new Date(startDate);
+  endDate.setMonth(endDate.getMonth() + 1);
+
+  /* 1. weekly → expand to actual dates */
+  const cur = new Date(startDate);
+  while (cur <= endDate) {
+    const dow = cur.getDay();
+    const matchDay = DAYS.find(d => DAY_KEY_TO_DOW[d.key] === dow);
+    if (matchDay && weeklyData[matchDay.key]) {
+      const dk = dateToDK(cur);
+      classDays[dk] = { slots: weeklyData[matchDay.key], source: 'weekly' };
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  /* 2. merge custom dates */
+  Object.keys(customData).forEach(dk => {
+    const [y,m,d] = dk.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    if (dt >= startDate && dt <= endDate) {
+      if (classDays[dk]) {
+        /* วันซ้ำ: รวม slots, mark both */
+        classDays[dk] = {
+          slots: [...classDays[dk].slots, ...customData[dk]],
+          source: 'both'
+        };
+      } else {
+        classDays[dk] = { slots: customData[dk], source: 'custom' };
+      }
+    }
+  });
+
+  return classDays;
+}
+
+function dateToDK(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+/* ══════════════════════════════════════
+   CONFIRM PAGE
+══════════════════════════════════════ */
+function renderConfirmPage(classDays) {
+  const courseName = document.getElementById('courseName').value || 'ไม่ระบุชื่อคอร์ส';
+  const subject    = document.getElementById('subject').value   || '';
+  const price      = document.getElementById('price').value     || '';
+  const totalDays  = Object.keys(classDays).length;
+  const hasWeekly  = Object.keys(weeklyData).length > 0;
+  const hasCustom  = Object.keys(customData).length > 0;
+
+  document.getElementById('confirm-course-name').textContent = courseName;
+  document.getElementById('confirm-course-meta').innerHTML =
+    `<span>📚 ${subject}</span><span>💰 ${price?Number(price).toLocaleString():'-'} บาท/ชั่วโมง</span>`;
+
+  renderMonthViews(classDays, hasWeekly, hasCustom);
+  renderListView(classDays);
+}
+
+function renderMonthViews(classDays, hasWeekly, hasCustom) {
+  const container = document.getElementById('months-container');
+  container.innerHTML = '';
+
+  /* collect months */
+  const months = {};
+  Object.keys(classDays).sort().forEach(dk => {
+    const [y,m] = dk.split('-').map(Number);
+    const mkey  = `${y}-${String(m).padStart(2,'0')}`;
+    if (!months[mkey]) months[mkey] = {};
+    months[mkey][dk] = classDays[dk];
+  });
+  /* ensure at least current month shown */
+  const defaultKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+  if (!Object.keys(months).length) months[defaultKey] = {};
+
+  /* legend removed — single color for all days */
+  const legendHTML = '';
+
+  const tm = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+
+  Object.keys(months).sort().forEach(mkey => {
+    const [y, m] = mkey.split('-').map(Number);
+    const mData  = months[mkey];
+    const count  = Object.keys(mData).length;
+    const dim    = new Date(y, m, 0).getDate();
+    const fd     = new Date(y, m-1, 1).getDay();
+
+    let gridHTML = '';
+    DNAMES.forEach(n => { gridHTML += `<div class="mini-dname">${n}</div>`; });
+    for (let i=0; i<fd; i++) gridHTML += `<div class="mini-cell empty"></div>`;
+
+    for (let d=1; d<=dim; d++) {
+      const dk  = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dt  = new Date(y, m-1, d).getTime();
+      const isToday = dt === tm;
+      const entry   = mData[dk];
+
+      let cls = 'mini-cell';
+      if (entry) {
+        cls += ' has-class';
+      }
+      if (isToday) cls += ' today-mark';
+
+      let inner = `<span>${d}</span>`;
+      if (entry && entry.slots.length) {
+        inner += `<span class="mini-times">${entry.slots[0].start}</span>`;
+      }
+      gridHTML += `<div class="${cls}">${inner}</div>`;
+    }
+
+    const sec = document.createElement('div');
+    sec.className = 'month-section';
+    sec.innerHTML = `
+      <div class="month-header">
+        <div class="month-title">${MNAMES[m-1]} ${y+543}</div>
+        <div class="month-count">${count} วัน</div>
+      </div>
+      <div class="mini-cal">
+        <div class="mini-cal-grid">${gridHTML}</div>
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-dot" style="background:transparent;outline:2px solid var(--primary);outline-offset:-1px"></div><span>วันนี้</span></div>
+        </div>
+      </div>`;
+    container.appendChild(sec);
+  });
+}
+
+function renderListView(classDays) {
+  const container = document.getElementById('list-container');
+  container.innerHTML = '';
+
+  const months = {};
+  Object.keys(classDays).sort().forEach(dk => {
+    const [y,m] = dk.split('-').map(Number);
+    const mkey = `${y}-${String(m).padStart(2,'0')}`;
+    if (!months[mkey]) months[mkey] = [];
+    months[mkey].push(dk);
+  });
+
+  if (!Object.keys(months).length) {
+    container.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:14px;">ไม่มีคลาสในช่วงนี้</div>';
+    return;
+  }
+
+  Object.keys(months).sort().forEach(mkey => {
+    const [y,m] = mkey.split('-').map(Number);
+    const dates = months[mkey];
+    let rows = '';
+    dates.sort().forEach(dk => {
+      const [,dm,dd] = dk.split('-').map(Number);
+      const dt = new Date(y, dm-1, dd);
+      const dayName = DAYNAMES_TH[dt.getDay()];
+      const entry   = classDays[dk];
+      const slots   = entry.slots.map(t=>`${t.start}–${t.end}`).join(', ');
+      const srcLabel = '📅';
+      rows += `
+        <div class="detail-row">
+          <div class="detail-date-badge badge-weekly">${srcLabel} ${dd}/${dm}</div>
+          <div class="detail-day-label">วัน${dayName}</div>
+          <div class="detail-times">${slots}</div>
+        </div>`;
+    });
+    const sec = document.createElement('div');
+    sec.className = 'detail-section';
+    sec.innerHTML = `<div class="detail-section-title">${MNAMES[m-1]} ${y+543} · ${dates.length} วัน</div>${rows}`;
+    container.appendChild(sec);
+  });
+}
+
+function switchView(v) {
+  document.getElementById('vtab-cal').classList.toggle('active', v==='cal');
+  document.getElementById('vtab-list').classList.toggle('active', v==='list');
+  document.getElementById('view-cal').style.display  = v==='cal'  ? 'block' : 'none';
+  document.getElementById('view-list').style.display = v==='list' ? 'block' : 'none';
+}
+
+function goBack() {
+  document.getElementById('form-page').style.display    = 'block';
+  document.getElementById('confirm-page').style.display = 'none';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function handleSubmit() {
+  if (!document.getElementById('courseName').value.trim()) { alert('กรุณากรอกชื่อคอร์ส'); return; }
+  if (!document.getElementById('subject').value)           { alert('กรุณาเลือกหมวดวิชา'); return; }
+  if (!document.getElementById('price').value)             { alert('กรุณากรอกราคา/ชั่วโมง'); return; }
+  const hasWeekly = Object.keys(weeklyData).length > 0;
+  const hasCustom = Object.keys(customData).length > 0;
+  if (!hasWeekly && !hasCustom) { alert('กรุณาเลือกวันและเวลาสอน'); return; }
+
+  const classDays = generateSchedule();
+  renderConfirmPage(classDays);
+  document.getElementById('form-page').style.display    = 'none';
+  document.getElementById('confirm-page').style.display = 'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── INIT ── */
+buildWeeklyPanel();
+updateSummary();
+</script>
+</body>
+</html>
