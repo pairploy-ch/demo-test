@@ -370,6 +370,58 @@ body {
 }
 .edit-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
 .edit-reset-btn.hidden { display: none; }
+.edit-delete-day-btn {
+  width: 100%; padding: 11px; background: transparent; color: var(--danger);
+  border: 1.5px solid var(--danger); border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; margin-top: 6px; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.edit-delete-day-btn:hover { background: #FEE2E2; }
+.edit-delete-day-btn.hidden { display: none; }
+/* CONFLICT MODAL */
+.conflict-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(26,26,46,0.55);
+  display: none; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.conflict-overlay.open { display: flex; }
+.conflict-modal {
+  width: 100%; max-width: 400px;
+  background: var(--card); border-radius: var(--radius);
+  padding: 24px 20px 20px;
+  animation: popIn 0.2s ease;
+}
+@keyframes popIn { from { transform: scale(0.92); opacity:0; } to { transform: scale(1); opacity:1; } }
+.conflict-icon { font-size: 32px; text-align: center; margin-bottom: 10px; }
+.conflict-title { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+.conflict-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 16px; }
+.conflict-list {
+  background: var(--bg); border-radius: var(--radius-sm);
+  padding: 10px 14px; margin-bottom: 18px;
+  max-height: 200px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.conflict-item {
+  font-size: 13px; color: var(--text);
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.conflict-item-dot { color: var(--danger); font-size: 16px; line-height: 1.3; flex-shrink: 0; }
+.conflict-btns { display: flex; flex-direction: column; gap: 8px; }
+.conflict-proceed-btn {
+  width: 100%; padding: 12px; background: var(--primary); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.conflict-proceed-btn:hover { background: #4a3fb8; }
+.conflict-cancel-btn {
+  width: 100%; padding: 11px; background: transparent; color: var(--muted);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.conflict-cancel-btn:hover { border-color: var(--text); color: var(--text); }
 .mini-override-badge { position: absolute; top: 2px; right: 3px; font-size: 8px; line-height: 1; }
 .mini-cell.overridden-cell { background: #7B6FDF; }
 .override-tag { font-size: 11px; font-weight: 500; color: var(--primary); margin-left: 6px; background: var(--primary-light); padding: 2px 6px; border-radius: 10px; }
@@ -542,7 +594,19 @@ body {
   </div>
 </div>
 
-<!-- Calendar Modal -->
+<!-- Conflict Warning Modal -->
+<div class="conflict-overlay" id="conflict-overlay">
+  <div class="conflict-modal">
+    <div class="conflict-icon">⚠️</div>
+    <div class="conflict-title">พบวันและเวลาซ้ำ</div>
+    <div class="conflict-sub">ตารางสอนนี้ซ้ำกับคอร์สที่บันทึกไว้แล้ว</div>
+    <div class="conflict-list" id="conflict-list"></div>
+    <div class="conflict-btns">
+      <!-- <button class="conflict-proceed-btn" onclick="proceedAnyway()">บันทึกต่อไป</button> -->
+      <button class="conflict-cancel-btn" onclick="closeConflictModal()">กลับแก้ไข</button>
+    </div>
+  </div>
+</div>
 <div class="cal-overlay" id="cal-overlay">
   <div class="cal-sheet">
     <div class="cal-handle"></div>
@@ -575,6 +639,10 @@ body {
       บันทึกเวลาวันนี้
     </button>
     <button class="edit-reset-btn" id="edit-reset-btn" onclick="resetEditDay()">↩ รีเซ็ตเป็นเวลาปกติ</button>
+    <button class="edit-delete-day-btn" id="edit-delete-day-btn" onclick="deleteEditDay()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+      ลบวันนี้ออกจากตาราง
+    </button>
   </div>
 </div>
 
@@ -819,7 +887,9 @@ function generateSchedule() {
 
   /* 3. apply per-date overrides from confirm page edits */
   Object.keys(overrideData).forEach(dk => {
-    if (classDays[dk]) {
+    if (overrideData[dk] === '__deleted__') {
+      delete classDays[dk]; // permanently removed
+    } else if (classDays[dk]) {
       classDays[dk] = { slots: overrideData[dk], source: classDays[dk].source, overridden: true };
     }
   });
@@ -1008,15 +1078,7 @@ function finalSave() {
     savedCourses.push(courseData);
   }
   editingCourseId = null;
-  document.getElementById('confirm-hero').style.background = 'linear-gradient(135deg, #10B981 0%, #34D399 100%)';
-  document.getElementById('confirm-hero-icon').textContent = '✅';
-  document.getElementById('confirm-hero-title').textContent = 'บันทึกสำเร็จแล้ว!';
-  document.getElementById('confirm-hero-sub').textContent = 'ตารางสอนของคุณถูกบันทึกเรียบร้อย';
-  document.getElementById('confirm-page-title').textContent = 'บันทึกสำเร็จ';
-  document.getElementById('confirm-back-btn').style.visibility = 'hidden';
-  document.getElementById('confirm-action-btns').style.display = 'none';
-  document.getElementById('saved-action-btns').style.display = 'block';
-  window.scrollTo({top:0,behavior:'smooth'});
+  goToList();
 }
 
 function startNew() {
@@ -1033,7 +1095,71 @@ function handleSubmit() {
 
   const classDays = generateSchedule();
   currentClassDays = classDays;
+
+  // check conflicts with existing saved courses (skip self when editing)
+  const conflicts = findConflicts(classDays);
+  if (conflicts.length) {
+    showConflictModal(conflicts, classDays);
+    return;
+  }
+
   renderConfirmPage(classDays);
+  showPage('confirm-page');
+}
+
+function slotsOverlap(a, b) {
+  // a and b are {start, end} in "HH:MM" format
+  const toMin = s => { const [h,m] = s.split(':').map(Number); return h*60+m; };
+  return toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
+}
+
+function findConflicts(classDays) {
+  const conflicts = [];
+  savedCourses.forEach(course => {
+    if (course.id === editingCourseId) return; // skip self
+    Object.keys(classDays).forEach(dk => {
+      if (!course.classDays[dk]) return;
+      const newSlots = classDays[dk].slots;
+      const existSlots = course.classDays[dk].slots;
+      const overlapping = [];
+      newSlots.forEach(ns => {
+        existSlots.forEach(es => {
+          if (slotsOverlap(ns, es)) {
+            overlapping.push(`${ns.start}–${ns.end}`);
+          }
+        });
+      });
+      if (overlapping.length) {
+        conflicts.push({ dk, courseName: course.name, times: [...new Set(overlapping)] });
+      }
+    });
+  });
+  return conflicts;
+}
+
+function showConflictModal(conflicts, classDays) {
+  const list = document.getElementById('conflict-list');
+  list.innerHTML = conflicts.map(c => {
+    const [y,m,d] = c.dk.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    const dayLabel = `${d}/${m} (วัน${DAYNAMES_TH[dt.getDay()]})`;
+    return `<div class="conflict-item">
+      <span class="conflict-item-dot">•</span>
+      <span><strong>${dayLabel}</strong> เวลา ${c.times.join(', ')} ซ้ำกับ "${c.courseName}"</span>
+    </div>`;
+  }).join('');
+  document.getElementById('conflict-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeConflictModal() {
+  document.getElementById('conflict-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function proceedAnyway() {
+  closeConflictModal();
+  renderConfirmPage(currentClassDays);
   showPage('confirm-page');
 }
 
@@ -1053,6 +1179,9 @@ function openEditDay(dk) {
   document.getElementById('edit-date-label').textContent = fmtDate(dk);
   const resetBtn = document.getElementById('edit-reset-btn');
   resetBtn.classList.toggle('hidden', !overrideData[dk]);
+
+  // show delete button (always available on confirm page)
+  document.getElementById('edit-delete-day-btn').classList.remove('hidden');
 
   renderEditSlots();
   document.getElementById('edit-overlay').classList.add('open');
@@ -1118,6 +1247,31 @@ function resetEditDay() {
   closeEditDay();
   currentClassDays = generateSchedule();
   renderConfirmPage(currentClassDays);
+}
+
+function deleteEditDay() {
+  const overlayMode = document.getElementById('edit-overlay').dataset.mode;
+  if (overlayMode === 'detail') {
+    deleteDetailEditDay();
+    return;
+  }
+  if (!editDK) return;
+  delete currentClassDays[editDK];
+  overrideData[editDK] = '__deleted__';
+  closeEditDay();
+  renderConfirmPage(currentClassDays);
+}
+
+function deleteDetailEditDay() {
+  const course = savedCourses.find(c => c.id === viewingCourseId);
+  if (!course || !detailEditDK) return;
+  delete course.classDays[detailEditDK];
+  closeEditDay();
+  document.getElementById('edit-overlay').dataset.mode = '';
+  renderMiniCal_detail(course.classDays, 'detail-months-container');
+  renderListView_detail(course.classDays, 'detail-list-container');
+  detailEditDK = null;
+  detailEditSlots = [];
 }
 
 document.getElementById('edit-overlay').addEventListener('click', function(e) {
@@ -1198,7 +1352,7 @@ function renderMyCoursesPage() {
         <span class="course-card-badge">${dayCount} วัน</span>
       </div>
       <div class="course-card-footer">
-        <div class="course-card-days">🗓 ${dayCount} วันสอนในช่วงนี้</div>
+        <div></div>
         <div class="course-card-arrow">›</div>
       </div>`;
     c.appendChild(card);
@@ -1331,6 +1485,8 @@ function openDetailEditDay(dk) {
 
   document.getElementById('edit-date-label').textContent = fmtDate(dk);
   document.getElementById('edit-reset-btn').classList.add('hidden');
+  // show delete button for detail page too
+  document.getElementById('edit-delete-day-btn').classList.remove('hidden');
   renderDetailEditSlots();
   // swap save handler
   document.getElementById('edit-overlay').dataset.mode = 'detail';
