@@ -287,6 +287,53 @@ body {
 .back-edit-btn:hover { background: var(--primary-light); }
 .share-btn { width: 100%; padding: 15px; background: var(--success); color: #fff; border: none; border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
 .share-btn:hover { background: #0d9b6e; transform: translateY(-1px); }
+
+/* EDIT DAY OVERLAY */
+.edit-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(26,26,46,0.5);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.edit-overlay.open { display: flex; }
+.edit-sheet {
+  width: 100%; max-width: 480px;
+  background: var(--card); border-radius: 20px 20px 0 0;
+  padding: 12px 20px 36px;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(40px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+.edit-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 16px; }
+.edit-sheet-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.edit-sheet-title { font-size: 16px; font-weight: 700; }
+.edit-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--bg); cursor: pointer; font-size: 16px; color: var(--muted); display: flex; align-items: center; justify-content: center; }
+.edit-date-label { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+.edit-slots-wrap { margin-bottom: 12px; }
+.edit-save-btn {
+  width: 100%; padding: 13px; background: var(--primary); color: #fff;
+  border: none; border-radius: var(--radius-sm); font-family: 'Sarabun', sans-serif;
+  font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.2s;
+}
+.edit-save-btn:hover { background: #4a3fb8; }
+.edit-reset-btn {
+  width: 100%; padding: 11px; background: transparent; color: var(--muted);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.edit-reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+.edit-reset-btn.hidden { display: none; }
+.mini-override-badge { position: absolute; top: 2px; right: 3px; font-size: 8px; line-height: 1; }
+.mini-cell.overridden-cell { background: #7B6FDF; }
+.override-tag { font-size: 11px; font-weight: 500; color: var(--primary); margin-left: 6px; background: var(--primary-light); padding: 2px 6px; border-radius: 10px; }
+.detail-edit-btn {
+  width: 30px; height: 30px; border-radius: 6px; flex-shrink: 0;
+  border: 1.5px solid var(--border); background: var(--bg);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; transition: all 0.15s;
+}
+.detail-edit-btn:hover { border-color: var(--primary); background: var(--primary-light); }
 </style>
 </head>
 <body>
@@ -410,6 +457,25 @@ body {
   </div>
 </div>
 
+<!-- Edit Day Time Overlay -->
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-sheet">
+    <div class="edit-handle"></div>
+    <div class="edit-sheet-header">
+      <div class="edit-sheet-title">✏️ แก้ไขเวลาวันนี้</div>
+      <button class="edit-close" onclick="closeEditDay()">✕</button>
+    </div>
+    <div class="edit-date-label" id="edit-date-label"></div>
+    <div class="edit-slots-wrap" id="edit-slots-wrap"></div>
+    <button class="add-time-btn" style="margin-bottom:16px" onclick="addEditSlot()">+ เพิ่มช่วงเวลา</button>
+    <button class="edit-save-btn" onclick="saveEditDay()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+      บันทึกเวลาวันนี้
+    </button>
+    <button class="edit-reset-btn" id="edit-reset-btn" onclick="resetEditDay()">↩ รีเซ็ตเป็นเวลาปกติ</button>
+  </div>
+</div>
+
 <script>
 const DAYS = [
   {key:'sun',label:'วันอาทิตย์',short:'อาท'},
@@ -428,6 +494,8 @@ const MNAMES  = ['มกราคม','กุมภาพันธ์','มี�
 let mode = 'weekly';
 let weeklyData = {};   // {mon: [{start,end},...], ...}
 let customData = {};   // {'2025-06-10': [{start,end},...], ...}
+let overrideData = {}; // {'2025-06-02': [{start,end},...], ...} — per-date overrides on confirm page
+let currentClassDays = {}; // keep last generated schedule for re-render
 
 const today = new Date();
 let calYear  = today.getFullYear();
@@ -647,6 +715,13 @@ function generateSchedule() {
     }
   });
 
+  /* 3. apply per-date overrides from confirm page edits */
+  Object.keys(overrideData).forEach(dk => {
+    if (classDays[dk]) {
+      classDays[dk] = { slots: overrideData[dk], source: classDays[dk].source, overridden: true };
+    }
+  });
+
   return classDays;
 }
 
@@ -714,14 +789,17 @@ function renderMonthViews(classDays, hasWeekly, hasCustom) {
       let cls = 'mini-cell';
       if (entry) {
         cls += ' has-class';
+        if (entry.overridden) cls += ' overridden-cell';
       }
       if (isToday) cls += ' today-mark';
 
       let inner = `<span>${d}</span>`;
       if (entry && entry.slots.length) {
         inner += `<span class="mini-times">${entry.slots[0].start}</span>`;
+        if (entry.overridden) inner += `<span class="mini-override-badge">✏️</span>`;
       }
-      gridHTML += `<div class="${cls}">${inner}</div>`;
+      const clickAttr = entry ? `onclick="openEditDay('${dk}')" title="แก้ไขเวลาวันนี้" style="cursor:pointer"` : '';
+      gridHTML += `<div class="${cls}" ${clickAttr}>${inner}</div>`;
     }
 
     const sec = document.createElement('div');
@@ -769,11 +847,13 @@ function renderListView(classDays) {
       const entry   = classDays[dk];
       const slots   = entry.slots.map(t=>`${t.start}–${t.end}`).join(', ');
       const srcLabel = '📅';
+      const overrideBadge = entry.overridden ? `<span class="override-tag">✏️ แก้แล้ว</span>` : '';
       rows += `
         <div class="detail-row">
           <div class="detail-date-badge badge-weekly">${srcLabel} ${dd}/${dm}</div>
-          <div class="detail-day-label">วัน${dayName}</div>
+          <div class="detail-day-label">วัน${dayName}${overrideBadge}</div>
           <div class="detail-times">${slots}</div>
+          <button class="detail-edit-btn" onclick="openEditDay('${dk}')">✏️</button>
         </div>`;
     });
     const sec = document.createElement('div');
@@ -791,6 +871,8 @@ function switchView(v) {
 }
 
 function goBack() {
+  overrideData = {};
+  currentClassDays = {};
   document.getElementById('form-page').style.display    = 'block';
   document.getElementById('confirm-page').style.display = 'none';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -805,11 +887,88 @@ function handleSubmit() {
   if (!hasWeekly && !hasCustom) { alert('กรุณาเลือกวันและเวลาสอน'); return; }
 
   const classDays = generateSchedule();
+  currentClassDays = classDays;
   renderConfirmPage(classDays);
   document.getElementById('form-page').style.display    = 'none';
   document.getElementById('confirm-page').style.display = 'block';
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+/* ══════════════════════════════════════
+   EDIT DAY (per-date override on confirm page)
+══════════════════════════════════════ */
+let editDK = null;
+let editSlots = [];
+
+function openEditDay(dk) {
+  editDK = dk;
+  // start from current (possibly overridden) slots
+  const entry = currentClassDays[dk];
+  if (!entry) return;
+  editSlots = JSON.parse(JSON.stringify(entry.slots)); // deep copy
+
+  document.getElementById('edit-date-label').textContent = fmtDate(dk);
+  const resetBtn = document.getElementById('edit-reset-btn');
+  resetBtn.classList.toggle('hidden', !overrideData[dk]);
+
+  renderEditSlots();
+  document.getElementById('edit-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditDay() {
+  document.getElementById('edit-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+  editDK = null;
+  editSlots = [];
+}
+
+function renderEditSlots() {
+  const c = document.getElementById('edit-slots-wrap');
+  c.innerHTML = '';
+  editSlots.forEach((t, i) => {
+    const r = document.createElement('div'); r.className = 'time-row';
+    r.innerHTML = `<span class="time-num">${i+1}</span>
+      <select class="time-select" onchange="editSlots[${i}].start=this.value">${timeOpts(t.start)}</select>
+      <span class="time-sep">-</span>
+      <select class="time-select" onchange="editSlots[${i}].end=this.value">${timeOpts(t.end)}</select>
+      <button class="remove-time" onclick="removeEditSlot(${i})">✕</button>`;
+    c.appendChild(r);
+  });
+}
+
+function addEditSlot() {
+  editSlots.push({start:'09:00', end:'10:00'});
+  renderEditSlots();
+}
+
+function removeEditSlot(i) {
+  if (editSlots.length <= 1) return;
+  editSlots.splice(i, 1);
+  renderEditSlots();
+}
+
+function saveEditDay() {
+  if (!editDK) return;
+  overrideData[editDK] = JSON.parse(JSON.stringify(editSlots));
+  closeEditDay();
+  // re-generate and re-render confirm page
+  currentClassDays = generateSchedule();
+  const courseName = document.getElementById('courseName').value || 'ไม่ระบุชื่อคอร์ส';
+  renderConfirmPage(currentClassDays);
+}
+
+function resetEditDay() {
+  if (!editDK) return;
+  delete overrideData[editDK];
+  closeEditDay();
+  currentClassDays = generateSchedule();
+  renderConfirmPage(currentClassDays);
+}
+
+document.getElementById('edit-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeEditDay();
+});
 
 /* ── INIT ── */
 buildWeeklyPanel();
